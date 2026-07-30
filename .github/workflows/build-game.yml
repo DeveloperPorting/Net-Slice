@@ -42,7 +42,7 @@ jobs:
           cd .haxelib/hxcpp/git/tools/hxcpp
           haxe compile.hxml
           cd ../../project
-          neko build.n
+          neko build.n android
           cd ../../../..
           cd .haxelib/lime/git
           git submodule update --init --recursive
@@ -102,7 +102,7 @@ jobs:
           Run haxe compile.hxml
           Pop-Location
           Push-Location .haxelib/hxcpp/git/project
-          Run neko build.n
+          Run neko build.n windows
           Pop-Location
           Push-Location .haxelib/lime/git
           Run git submodule update --init --recursive
@@ -149,7 +149,7 @@ jobs:
           cd .haxelib/hxcpp/git/tools/hxcpp
           haxe compile.hxml
           cd ../../project
-          neko build.n
+          neko build.n linux
           cd ../../../..
           cd .haxelib/lime/git
           git submodule update --init --recursive
