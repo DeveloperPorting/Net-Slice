@@ -33,7 +33,7 @@ jobs:
       - name: Install Linux system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          yes | sudo apt-get install -y \
             build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
             libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
             libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
@@ -47,17 +47,17 @@ jobs:
         run: |
           set -euo pipefail
           haxelib setup ~/haxelib
-          haxelib install hmm --quiet
-          haxelib run hmm install --quiet
+          haxelib install hmm --quiet --always
+          yes | haxelib run hmm install --quiet
           rm -rf .haxelib/lime
           git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
           git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
           git -C .haxelib/lime/git submodule update --init --recursive --force
-          haxelib dev lime .haxelib/lime/git
+          yes | haxelib dev lime .haxelib/lime/git
           
       - name: Rebuild Linux Lime ndll
         run: |
-          haxelib run lime rebuild cpp -release
+          yes | haxelib run lime rebuild cpp -release
           if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
             echo "ERROR: Missing Lime ndll"
             exit 1
@@ -119,8 +119,8 @@ jobs:
             }
           }
           Run haxelib setup C:/haxelib
-          Run haxelib install hmm --quiet
-          Run haxelib run hmm install --quiet
+          Run haxelib install hmm --quiet --always
+          "y" | haxelib run hmm install --quiet
           if (Test-Path .haxelib/lime) {
             Remove-Item -Recurse -Force -LiteralPath .haxelib/lime
           }
@@ -129,7 +129,7 @@ jobs:
           Run git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
           Run git -C .haxelib/lime/git submodule sync --recursive
           Run git -C .haxelib/lime/git submodule update --init --recursive --force
-          Run haxelib dev lime .haxelib/lime/git
+          "y" | haxelib dev lime .haxelib/lime/git
           if (Test-Path .haxelib/lime/git/project/obj) {
             Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/project/obj
           }
@@ -137,7 +137,7 @@ jobs:
             Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/ndll
           }
           Run haxelib path lime
-          Run yes | haxelib run lime rebuild cpp -release
+          "y" | haxelib run lime rebuild cpp -release
 
       - name: Build Windows
         run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
@@ -168,7 +168,7 @@ jobs:
       - name: Install Linux system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          yes | sudo apt-get install -y \
             build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
             libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
             libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
@@ -182,13 +182,13 @@ jobs:
         run: |
           set -euo pipefail
           haxelib setup ~/haxelib
-          haxelib install hmm --quiet
-          haxelib run hmm install --quiet
+          haxelib install hmm --quiet --always
+          yes | haxelib run hmm install --quiet
           rm -rf .haxelib/lime
           git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
           git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
           git -C .haxelib/lime/git submodule update --init --recursive --force
-          haxelib dev lime .haxelib/lime/git
+          yes | haxelib dev lime .haxelib/lime/git
 
       - name: Rebuild Linux Lime ndll
         run: |
@@ -205,4 +205,4 @@ jobs:
         uses: actions/upload-artifact@v7.0.1
         with:
           name: Net Slice (Linux)
-          path: export/release/linux/bin          
+          path: export/release/linux/bin
