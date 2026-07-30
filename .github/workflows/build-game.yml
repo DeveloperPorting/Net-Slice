@@ -47,7 +47,6 @@ jobs:
         run: |
           set -euo pipefail
           haxelib setup ~/haxelib
-          haxelib install hxcpp > /dev/null --quiet
           haxelib install hmm --quiet
           haxelib run hmm install --quiet
           rm -rf .haxelib/lime
@@ -140,7 +139,6 @@ jobs:
             Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/ndll
           }
           Run haxelib path lime
-          Run haxelib run lime rebuild hxcpp --quiet
           Run haxelib run lime rebuild cpp -release
 
       - name: Build Windows
@@ -197,7 +195,6 @@ jobs:
 
       - name: Rebuild Linux Lime ndll
         run: |
-          haxelib run lime rebuild hxcpp --quiet
           haxelib run lime rebuild cpp -release
           if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
             echo "ERROR: Missing Lime ndll"
