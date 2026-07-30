@@ -49,6 +49,9 @@ jobs:
           haxelib install hmm --quiet
           haxelib run hmm install --quiet
 
+      - name: Rebuild Lime for Host
+        run: haxelib run lime rebuild cpp -release
+          
       - name: Configure Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
@@ -102,6 +105,7 @@ jobs:
           Run haxelib setup C:/haxelib
           Run haxelib install hmm --quiet
           Run haxelib run hmm install --quiet
+          Run haxelib run lime rebuild cpp -release
           Run haxelib run lime rebuild hxcpp windows
 
       - name: Build Windows
@@ -149,6 +153,7 @@ jobs:
           haxelib setup ~/haxelib
           haxelib install hmm --quiet
           haxelib run hmm install --quiet
+          haxelib run lime rebuild cpp -release
           haxelib run lime rebuild hxcpp linux
 
       - name: Build Linux
