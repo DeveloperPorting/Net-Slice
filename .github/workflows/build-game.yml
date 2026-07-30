@@ -192,7 +192,7 @@ jobs:
 
       - name: Rebuild Linux Lime ndll
         run: |
-          haxelib run lime rebuild cpp -release -y
+          yes | haxelib run lime rebuild cpp -release
           if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
             echo "ERROR: Missing Lime ndll"
             exit 1
