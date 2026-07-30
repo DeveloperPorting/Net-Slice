@@ -39,7 +39,6 @@ jobs:
           haxelib --global install hmm --quiet
           haxelib --global run hmm setup
           haxelib run hmm install --quiet
-          haxelib run lime rebuild cpp -64 -release -clean
           haxelib run lime setup
 
       - name: Configure Android
