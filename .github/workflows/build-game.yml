@@ -10,7 +10,6 @@ on:
 
 env:
   HAXE_VER: 4.3.7
-  LIME_HASH: a8f343a027435afe7ba7645e926a1f74f28011a8
 
 jobs:
   Android:
@@ -43,43 +42,25 @@ jobs:
             libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
             libvulkan-dev pkg-config
 
-      - name: Prepare Android Lime rebuild
+      - name: Prepare Haxelibs
         run: |
           set -euo pipefail
-          haxelib setup ~/haxelib <<< "y"
-          haxelib install hmm --quiet <<< "y"
-          haxelib run hmm install --quiet <<< "y"
-          rm -rf .haxelib/lime
-          git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
-          git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
-          git -C .haxelib/lime/git submodule update --init --recursive --force
-          haxelib dev lime .haxelib/lime/git <<< "y"
-          
-      - name: Rebuild Linux Lime ndll
-        run: |
-          haxelib run lime rebuild cpp -release <<< "y"
-          if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
-            echo "ERROR: Missing Lime ndll"
-            exit 1
-          fi
-          
+          haxelib setup ~/haxelib
+          haxelib install hmm --quiet
+          haxelib run hmm install --quiet
+
       - name: Configure Android
         run: |
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME <<< "y"
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME <<< "y"
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64 <<< "y"
-          haxelib run lime config ANDROID_SETUP true <<< "y"
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_SETUP true
 
-      - name: Rebuild Android Lime so
-        run: |
-          haxelib run lime rebuild android -release <<< "y"
-          if [ ! -f .haxelib/lime/git/ndll/Android/liblime-64.so ]; then
-            echo "ERROR: Missing Liblime 64 so"
-            exit 1
-          fi
+      - name: Rebuild hxcpp for Android
+        run: haxelib run lime rebuild hxcpp android
 
       - name: Compile
-        run: haxelib run lime build android -release -D ${{ inputs.buildFlags }} <<< "y"
+        run: haxelib run lime build android -release -D ${{ inputs.buildFlags }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v7.0.1
@@ -102,7 +83,7 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VER }}
 
-      - name: Prepare Windows Lime rebuild
+      - name: Prepare Haxelibs and Rebuild hxcpp
         shell: pwsh
         run: |
           function Run {
@@ -118,29 +99,13 @@ jobs:
               exit $LASTEXITCODE
             }
           }
-          "y" | haxelib setup C:/haxelib
-          "y" | haxelib install hmm --quiet
-          "y" | haxelib run hmm install --quiet
-          if (Test-Path .haxelib/lime) {
-            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime
-          }
-          Run git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
-          Run git -C .haxelib/lime/git fetch --all --tags --prune
-          Run git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
-          Run git -C .haxelib/lime/git submodule sync --recursive
-          Run git -C .haxelib/lime/git submodule update --init --recursive --force
-          "y" | haxelib dev lime .haxelib/lime/git
-          if (Test-Path .haxelib/lime/git/project/obj) {
-            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/project/obj
-          }
-          if (Test-Path .haxelib/lime/git/ndll) {
-            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/ndll
-          }
-          "y" | haxelib path lime
-          "y" | haxelib run lime rebuild cpp -release
+          Run haxelib setup C:/haxelib
+          Run haxelib install hmm --quiet
+          Run haxelib run hmm install --quiet
+          Run haxelib run lime rebuild hxcpp windows
 
       - name: Build Windows
-        run: "y" | haxelib run lime build windows -D ${{ inputs.buildFlags }}
+        run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v7.0.1
@@ -178,28 +143,16 @@ jobs:
             libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
             libvulkan-dev pkg-config
 
-      - name: Prepare Linux Lime rebuild
+      - name: Prepare Haxelibs and Rebuild hxcpp
         run: |
           set -euo pipefail
-          haxelib setup ~/haxelib <<< "y"
-          haxelib install hmm --quiet <<< "y"
-          haxelib run hmm install --quiet <<< "y"
-          rm -rf .haxelib/lime
-          git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
-          git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
-          git -C .haxelib/lime/git submodule update --init --recursive --force
-          haxelib dev lime .haxelib/lime/git <<< "y"
-
-      - name: Rebuild Linux Lime ndll
-        run: |
-          haxelib run lime rebuild cpp -release <<< "y"
-          if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
-            echo "ERROR: Missing Lime ndll"
-            exit 1
-          fi
+          haxelib setup ~/haxelib
+          haxelib install hmm --quiet
+          haxelib run hmm install --quiet
+          haxelib run lime rebuild hxcpp linux
 
       - name: Build Linux
-        run: haxelib run lime build Project.xml linux -D ${{ inputs.buildFlags }} <<< "y"
+        run: haxelib run lime build Project.xml linux -D ${{ inputs.buildFlags }}
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v7.0.1
