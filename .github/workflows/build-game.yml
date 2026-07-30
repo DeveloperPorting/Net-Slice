@@ -72,7 +72,7 @@ jobs:
 
       - name: Rebuild Android Lime so
         run: |
-          haxelib run lime rebuild android -release
+          yes | haxelib run lime rebuild android -release
           if [ ! -f .haxelib/lime/git/ndll/Android/liblime-64.so ]; then
             echo "ERROR: Missing Liblime 64 so"
             exit 1
@@ -137,7 +137,7 @@ jobs:
             Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/ndll
           }
           Run haxelib path lime
-          Run haxelib run lime rebuild cpp -release
+          Run yes | haxelib run lime rebuild cpp -release
 
       - name: Build Windows
         run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
