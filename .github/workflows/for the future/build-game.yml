@@ -39,6 +39,15 @@ jobs:
           haxelib --global install hmm --quiet
           haxelib --global run hmm setup
           haxelib run hmm install --quiet
+          cd .haxelib/hxcpp/git/tools/hxcpp
+          haxe compile.hxml
+          cd ../../project
+          neko build.n android
+          cd ../../../..
+          cd .haxelib/lime/git
+          git submodule update --init --recursive
+          cd ../../..
+          haxelib run lime rebuild cpp -64 -release -clean
           haxelib run lime setup
 
       - name: Configure Android
@@ -47,6 +56,7 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
+          haxelib run lime rebuild android -release
 
       - name: Compile
         run: haxelib run lime build android -release -D ${{ inputs.buildFlags }}
