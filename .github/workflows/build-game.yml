@@ -47,6 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           haxelib setup ~/haxelib
+          haxelib install hxcpp > /dev/null --quiet
           haxelib install hmm --quiet
           haxelib run hmm install --quiet
           rm -rf .haxelib/lime
@@ -119,6 +120,7 @@ jobs:
             }
           }
           Run haxelib setup C:/haxelib
+          Run haxelib install hxcpp > /dev/null --quiet
           Run haxelib install hmm --quiet
           Run haxelib run hmm install --quiet
           if (Test-Path .haxelib/lime) {
@@ -182,6 +184,7 @@ jobs:
         run: |
           set -euo pipefail
           haxelib setup ~/haxelib
+          haxelib install hxcpp > /dev/null --quiet
           haxelib install hmm --quiet
           haxelib run hmm install --quiet
           rm -rf .haxelib/lime
