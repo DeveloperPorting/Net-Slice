@@ -42,16 +42,13 @@ jobs:
             libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
             libvulkan-dev pkg-config
 
-      - name: Prepare Haxelibs
+      - name: Setup hmm and libraries
         run: |
-          set -euo pipefail
-          haxelib setup ~/haxelib
-          haxelib install hmm --quiet
+          haxelib --global install hmm --quiet
+          haxelib --global run hmm setup
           haxelib run hmm install --quiet
+          haxelib run lime setup
 
-      - name: Rebuild Lime for Host
-        run: haxelib run lime rebuild cpp -release
-          
       - name: Configure Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
@@ -59,8 +56,8 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
-      - name: Rebuild hxcpp for Android
-        run: haxelib run lime rebuild hxcpp android
+      - name: Rebuild Platform
+        run: haxelib run lime rebuild android -release
 
       - name: Compile
         run: haxelib run lime build android -release -D ${{ inputs.buildFlags }}
@@ -86,29 +83,17 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VER }}
 
-      - name: Prepare Haxelibs and Rebuild hxcpp
-        shell: pwsh
+      - name: Setup hmm and libraries
         run: |
-          function Run {
-            $exe = $args[0]
-            $cmdArgs = @()
-            if ($args.Length -gt 1) {
-              $cmdArgs = $args[1..($args.Length - 1)]
-            }
-            Write-Host ">>> $exe $($cmdArgs -join ' ')"
-            & $exe @cmdArgs
-            if ($LASTEXITCODE -ne 0) {
-              Write-Error "Command failed with exit code ${LASTEXITCODE}: $exe $($cmdArgs -join ' ')"
-              exit $LASTEXITCODE
-            }
-          }
-          Run haxelib setup C:/haxelib
-          Run haxelib install hmm --quiet
-          Run haxelib run hmm install --quiet
-          Run haxelib run lime rebuild cpp -release
-          Run haxelib run lime rebuild hxcpp windows
+          haxelib --global install hmm --quiet
+          haxelib --global run hmm setup
+          haxelib run hmm install --quiet
+          haxelib run lime setup
 
-      - name: Build Windows
+      - name: Rebuild Platform
+        run: haxelib run lime rebuild windows -release
+
+      - name: Compile
         run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
 
       - name: Upload Windows artifact
@@ -147,16 +132,17 @@ jobs:
             libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
             libvulkan-dev pkg-config
 
-      - name: Prepare Haxelibs and Rebuild hxcpp
+      - name: Setup hmm and libraries
         run: |
-          set -euo pipefail
-          haxelib setup ~/haxelib
-          haxelib install hmm --quiet
+          haxelib --global install hmm --quiet
+          haxelib --global run hmm setup
           haxelib run hmm install --quiet
-          haxelib run lime rebuild cpp -release
-          haxelib run lime rebuild hxcpp linux
+          haxelib run lime setup
 
-      - name: Build Linux
+      - name: Rebuild Platform
+        run: haxelib run lime rebuild linux -release
+
+      - name: Compile
         run: haxelib run lime build Project.xml linux -D ${{ inputs.buildFlags }}
 
       - name: Upload Linux artifact
