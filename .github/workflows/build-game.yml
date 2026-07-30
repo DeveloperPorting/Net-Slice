@@ -1,273 +1,209 @@
-# Builds the game on all platforms, to ensure it compiles on all target platforms.
-# This helps to ensure workers focus on the master branch.
-
-name: Build and Upload nightly game builds
+name: Build Game
 
 on:
   workflow_dispatch:
+  workflow_call:
     inputs:
-      build-defines:
+      buildFlags:
+        required: false
         type: string
-        description: Build defines to use
-        default: '-DGITHUB_BUILD'
-      save-artifact:
-        type: boolean
-        description: Save the build artifact to Github Actions (sends to itch otherwise)
-        default: false
-  push:
+
+env:
+  HAXE_VER: 4.3.7
+  LIME_HASH: 6421de16b9dfa4fb55c19f12db65d392a57585c8
 
 jobs:
-
-  gather-changes:
-    runs-on: build-set
-    outputs:
-      trigger-build: ${{ steps.should-trigger.outputs.result }}
-    steps:
-      - name: Checkout repo
-        uses: funkincrew/ci-checkout@v7.4
-        with:
-          submodules: false
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          base: ${{ github.ref }}
-          filters: |
-            docker:
-              - '.github/workflows/build-game.yml'
-              - '**/Dockerfile'
-      - uses: actions/github-script@v8
-        id: should-trigger
-        with:
-          result-encoding: string
-          script: |
-            const { payload } = context
-            const changes = ${{ steps.filter.outputs.changes }}
-            const manual = payload?.commits
-              .some(c => c.message.toLowerCase().replace(/\W/g, " ").includes("docker rebuild"))
-
-            console.log({ payload, changes, manual, commits: payload.commits })
-
-            return payload.created
-              || payload.forced
-              || changes.includes("docker")
-              || manual
-
-  gather-tags:
-    runs-on: build-set
-    outputs:
-      primary: ${{ steps.build-tags.outputs.primary }}
-      list: ${{ steps.build-tags.outputs.list }}
-    steps:
-      - name: Gather build tags
-        uses: actions/github-script@v8
-        id: build-tags
-        with:
-          script: |
-            const base = "ghcr.io/funkincrew/build-dependencies"
-            const default_branch = "rewrite/master"
-
-            const ref_path = context.ref.split("/").slice(2)
-            const ref = ref_path.join("/")
-            const ref_tag = ref_path.join("-")
-
-            const tags = [ref_tag, context.sha]
-
-            if (ref === default_branch) tags.push("latest")
-
-            console.log([
-              `ref: ${ref}`,
-              `default_branch: ${default_branch}`,
-              `tags: ${tags.join(", ")}`
-            ].join('\n'))
-
-            const tag_list = tags
-              .map(tag => `${base}:${tag}`)
-              .join("\n")
-
-            core.setOutput("primary", ref_tag)
-            core.setOutput("list", tag_list)
-
-  docker-image:
-    needs: [gather-changes, gather-tags]
-    if: needs.gather-changes.outputs.trigger-build == 'true'
-    runs-on: build-set
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repo
-        uses: funkincrew/ci-checkout@v7.4
-        with:
-          submodules: false
-      - name: Log into GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./build
-          push: true
-          tags: ${{ needs.gather-tags.outputs.list }}
-          labels: |
-            org.opencontainers.image.description=precooked haxe build dependencies
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.title=${{ github.repository_owner }}/build-dependencies
-            org.opencontainers.image.url=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ github.sha }}
-
-  build-game-on-host:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: windows
-            runs-on: windows
-          - target: macos
-            runs-on: macos
-          # TODO: Install XCode to build iOS
-          # - target: ios
-          #   runs-on: macos
-    runs-on:
-      - ${{ matrix.runs-on }}
-    defaults:
-      run:
-        shell: bash
+  Android:
+    name: Build Android
+    runs-on: ubuntu-latest
     env:
-      BUILD_DEFINES: ${{ github.event.inputs.build-defines || '-DGITHUB_BUILD' }}
+      CC: gcc-13
+      CXX: g++-13
     steps:
-      - name: Make git happy
-        run: |
-          git config --global --replace-all safe.directory $GITHUB_WORKSPACE
-      - name: Get checkout token
-        uses: actions/create-github-app-token@v3
-        id: app_token
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
         with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PEM }}
-          owner: ${{ github.repository_owner }}
-      - name: Checkout repo
-        uses: funkincrew/ci-checkout@v7.4
-        with:
-          submodules: 'recursive'
-          token: ${{ steps.app_token.outputs.token }}
-          persist-credentials: false
-          submodule-aliases: |
-            https://github.com/FunkinCrew/Funkin.assets > https://github.com/FunkinCrew/Funkin-assets-secret
-            https://github.com/FunkinCrew/Funkin.art > https://github.com/FunkinCrew/Funkin-art-secret
-      - name: Setup build environment
-        uses: ./.github/actions/setup-haxe
-        with:
-          gh-token: ${{ steps.app_token.outputs.token }}
-      - name: Setup HXCPP dev commit
-        run: |
-          cd .haxelib/hxcpp/git/tools/hxcpp
-          haxe compile.hxml
-          cd ../../../../..
-      - name: Populate .env
-        run: |
-          touch .env
-          grep API_NG_APP_ID .env || echo API_NG_APP_ID=${{ secrets.API_NG_APP_ID }} >> .env
-          grep API_NG_ENC_KEY .env || echo API_NG_ENC_KEY=${{ secrets.API_NG_ENC_KEY }} >> .env
-      - name: Build game (windows)
-        if: ${{ matrix.target == 'windows' }}
-        run: |
-          haxelib run lime build windows -v -release $BUILD_DEFINES
-        timeout-minutes: 120
-      - name: Build game (unix)
-        if: ${{ matrix.target != 'windows' }}
-        run: |
-          haxelib run lime build ${{ matrix.target }} -v -release --times $BUILD_DEFINES
-        timeout-minutes: 120
-      - name: Save build artifact to Github Actions
-        if: ${{ github.event.inputs.save-artifact }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-${{ matrix.target }}
-          path: export/release/${{matrix.target}}/bin/
-      - name: Upload build artifacts
-        uses: ./.github/actions/upload-itch
-        with:
-          butler-key: ${{ secrets.BUTLER_API_KEY}}
-          target: ${{ matrix.target }}
+          submodules: true
 
-  build-game-in-container:
-    needs: [gather-tags, docker-image]
-    if: ${{ ! cancelled() }}
-    runs-on: build-set
-    container: ghcr.io/funkincrew/build-dependencies:${{ needs.gather-tags.outputs.primary }}
-    strategy:
-      matrix:
-        include:
-          - target: linux
-          - target: html5
-          # - target: android
-    defaults:
-      run:
-        shell: bash
-    env:
-      BUILD_DEFINES: ${{ github.event.inputs.build-defines || '-DGITHUB_BUILD' }}
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v2.1.0
+        with:
+          haxe-version: ${{ env.HAXE_VER }}
+
+      - name: Install Linux system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
+            libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
+            libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
+            libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev \
+            libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev \
+            libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
+            libvulkan-dev pkg-config
+
+      - name: Prepare Android Lime rebuild
+        run: |
+          set -euo pipefail
+          haxelib setup ~/haxelib
+          haxelib install hmm --quiet
+          haxelib run hmm install --quiet
+          rm -rf .haxelib/lime
+          git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
+          git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
+          git -C .haxelib/lime/git submodule update --init --recursive --force
+          haxelib dev lime .haxelib/lime/git
+          
+      - name: Rebuild Linux Lime ndll
+        run: |
+          haxelib run lime rebuild cpp -release
+          if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
+            echo "ERROR: Missing Lime ndll"
+            exit 1
+          fi
+          
+      - name: Configure Android
+        run: |
+          haxelib run lime setup android
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_SETUP true
+
+      - name: Rebuild Android Lime so
+        run: |
+          haxelib run lime rebuild android -release
+          if [ ! -f .haxelib/lime/git/ndll/Android/liblime-64.so ]; then
+            echo "ERROR: Missing Liblime 64 so"
+            exit 1
+          fi
+
+      - name: Compile
+        run: haxelib run lime build android -release -D ${{ inputs.buildFlags }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: Net Slice (Android)
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  Windows:
+    name: Build Windows
+    runs-on: windows-latest
     steps:
-      - name: Get checkout token
-        uses: actions/create-github-app-token@v1
-        id: app_token
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
         with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PEM }}
-          owner: ${{ github.repository_owner }}
-      - name: Checkout repo
-        uses: funkincrew/ci-checkout@v7.4
+          submodules: true
+          
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v2.1.0
         with:
-          submodules: 'recursive'
-          token: ${{ steps.app_token.outputs.token }}
-          persist-credentials: false
-          submodule-aliases: |
-            https://github.com/FunkinCrew/Funkin.assets > https://github.com/FunkinCrew/Funkin-assets-secret
-            https://github.com/FunkinCrew/Funkin.art > https://github.com/FunkinCrew/Funkin-art-secret
-      - name: Config haxelib
+          haxe-version: ${{ env.HAXE_VER }}
+
+      - name: Prepare Windows Lime rebuild
+        shell: pwsh
         run: |
-          haxelib --never newrepo
-          echo "HAXEPATH=$(haxelib config)" >> "$GITHUB_ENV"
-      - name: Restore cached dependencies
-        id: cache-hmm
-        uses: actions/cache@v5
+          function Run {
+            $exe = $args[0]
+            $cmdArgs = @()
+            if ($args.Length -gt 1) {
+              $cmdArgs = $args[1..($args.Length - 1)]
+            }
+            Write-Host ">>> $exe $($cmdArgs -join ' ')"
+            & $exe @cmdArgs
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Command failed with exit code ${LASTEXITCODE}: $exe $($cmdArgs -join ' ')"
+              exit $LASTEXITCODE
+            }
+          }
+          Run haxelib setup C:/haxelib
+          Run haxelib install hmm --quiet
+          Run haxelib run hmm install --quiet
+          if (Test-Path .haxelib/lime) {
+            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime
+          }
+          Run git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
+          Run git -C .haxelib/lime/git fetch --all --tags --prune
+          Run git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
+          Run git -C .haxelib/lime/git submodule sync --recursive
+          Run git -C .haxelib/lime/git submodule update --init --recursive --force
+          Run haxelib dev lime .haxelib/lime/git
+          if (Test-Path .haxelib/lime/git/project/obj) {
+            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/project/obj
+          }
+          if (Test-Path .haxelib/lime/git/ndll) {
+            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/ndll
+          }
+          Run haxelib path lime
+          Run haxelib run lime rebuild cpp -release
+
+      - name: Build Windows
+        run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v7.0.1
         with:
-          path: .haxelib
-          key: haxe-hmm-${{ runner.os }}-${{ hashFiles('**/hmm.json') }}
-      - if: ${{ steps.cache-hmm.outputs.cache-hit != 'true' }}
-        name: Install dependencies
+          name: Net Slice (Windows)
+          path: export/release/windows/bin
+
+  Linux:
+    name: Build Linux
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc-13
+      CXX: g++-13
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v2.1.0
+        with:
+          haxe-version: ${{ env.HAXE_VER }}
+
+      - name: Install Linux system deps
         run: |
-          git config --global 'url.https://x-access-token:${{ steps.app_token.outputs.token }}@github.com/.insteadOf' https://github.com/
-          git config --global advice.detachedHead false
-          haxelib --global run hmm install -q
-          cd .haxelib/hxcpp/git/tools/hxcpp && haxe compile.hxml
-      - if: ${{ matrix.target != 'html5' }}
-        name: Restore hxcpp cache
-        uses: actions/cache@v5
-        with:
-          path: /usr/share/hxcpp
-          key: haxe-hxcpp-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
-          restore-keys: haxe-hxcpp-${{ runner.os }}-${{ github.ref_name }}
-      - name: Populate .env
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
+            libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
+            libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
+            libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev \
+            libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev \
+            libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
+            libvulkan-dev pkg-config
+
+      - name: Prepare Linux Lime rebuild
         run: |
-          touch .env
-          grep API_NG_APP_ID .env || echo API_NG_APP_ID=${{ secrets.API_NG_APP_ID }} >> .env
-          grep API_NG_ENC_KEY .env || echo API_NG_ENC_KEY=${{ secrets.API_NG_ENC_KEY }} >> .env
-      - name: Build game
+          set -euo pipefail
+          haxelib setup ~/haxelib
+          haxelib install hmm --quiet
+          haxelib run hmm install --quiet
+          rm -rf .haxelib/lime
+          git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
+          git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
+          git -C .haxelib/lime/git submodule update --init --recursive --force
+          haxelib dev lime .haxelib/lime/git
+
+      - name: Rebuild Linux Lime ndll
         run: |
-          haxelib run lime build ${{ matrix.target }} -v -release --times $BUILD_DEFINES
-        timeout-minutes: 120
-      - name: Save build artifact to Github Actions
-        if: ${{ github.event.inputs.save-artifact }}
-        uses: actions/upload-artifact@v7
+          haxelib run lime rebuild cpp -release
+          if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
+            echo "ERROR: Missing Lime ndll"
+            exit 1
+          fi
+
+      - name: Build Linux
+        run: haxelib run lime build Project.xml linux -D ${{ inputs.buildFlags }}
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v7.0.1
         with:
-          name: build-${{ matrix.target }}
-          path: export/release/${{matrix.target}}/bin/
-      - name: Upload build artifacts
-        uses: ./.github/actions/upload-itch
-        with:
-          butler-key: ${{ secrets.BUTLER_API_KEY}}
-          target: ${{ matrix.target }}
+          name: Net Slice (Linux)
+          path: export/release/linux/bin

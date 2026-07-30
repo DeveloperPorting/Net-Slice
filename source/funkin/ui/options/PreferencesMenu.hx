@@ -121,6 +121,22 @@ class PreferencesMenu extends Page<OptionsState.OptionsMenuPageName>
     },
       Preferences.downscroll, #if mobile ControlsHandler.hasExternalInputDevice
       || Preferences.controlsScheme != FunkinHitboxControlSchemes.Arrows #end);
+    #if mobile
+    // PeakSlice code lol
+    createPrefItemEnum('Control Scheme', 'How do you want your controls to look.', [
+      "Arrows" => FunkinHitboxControlSchemes.Arrows,
+      "Four Lanes" => FunkinHitboxControlSchemes.FourLanes,
+      "D-Pad" => FunkinHitboxControlSchemes.DoubleThumbDPad,
+    ], function(key:String, value:FunkinHitboxControlSchemes):Void {
+      Preferences.controlsScheme = value;
+    }, switch (Preferences.controlsScheme)
+      {
+        case FunkinHitboxControlSchemes.Arrows: "Arrows";
+        case FunkinHitboxControlSchemes.FourLanes: "Four Lanes";
+        case FunkinHitboxControlSchemes.DoubleThumbDPad: "D-Pad";
+        default: "Arrows";
+      });
+    #end
     createPrefItemPercentage('Strumline Background', 'Show a semi-transparent background behind the strumline.', function(value:Int):Void
     {
       Preferences.strumlineBackgroundOpacity = value;
