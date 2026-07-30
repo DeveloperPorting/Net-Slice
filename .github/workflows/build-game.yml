@@ -32,21 +32,17 @@ jobs:
       - name: Install Linux system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
-            libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
-            libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
-            libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev \
-            libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev \
-            libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev \
-            libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
-            libvulkan-dev pkg-config
+          sudo apt-get install -y build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin libwayland-dev libwayland-bin wayland-protocols libasound2-dev libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev libvulkan-dev pkg-config g++-multilib gcc-multilib
 
       - name: Setup hmm and libraries
         run: |
           haxelib --global install hmm --quiet
           haxelib --global run hmm setup
           haxelib run hmm install --quiet
+          cd .haxelib/lime/git
+          git submodule update --init --recursive
+          cd ../../..
+          haxelib run lime rebuild cpp -64 -release -clean
           haxelib run lime setup
 
       - name: Configure Android
@@ -55,9 +51,6 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
-
-      - name: Rebuild Platform
-        run: haxelib run lime rebuild android -release
 
       - name: Compile
         run: haxelib run lime build android -release -D ${{ inputs.buildFlags }}
@@ -88,10 +81,11 @@ jobs:
           haxelib --global install hmm --quiet
           haxelib --global run hmm setup
           haxelib run hmm install --quiet
+          cd .haxelib/lime/git
+          git submodule update --init --recursive
+          cd ../../..
+          haxelib run lime rebuild cpp -64 -release -clean
           haxelib run lime setup
-
-      - name: Rebuild Platform
-        run: haxelib run lime rebuild windows -release
 
       - name: Compile
         run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
@@ -122,25 +116,18 @@ jobs:
       - name: Install Linux system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
-            libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
-            libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
-            libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev \
-            libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev \
-            libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev \
-            libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
-            libvulkan-dev pkg-config
+          sudo apt-get install -y build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin libwayland-dev libwayland-bin wayland-protocols libasound2-dev libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev libvulkan-dev pkg-config g++-multilib gcc-multilib
 
       - name: Setup hmm and libraries
         run: |
           haxelib --global install hmm --quiet
           haxelib --global run hmm setup
           haxelib run hmm install --quiet
+          cd .haxelib/lime/git
+          git submodule update --init --recursive
+          cd ../../..
+          haxelib run lime rebuild cpp -64 -release -clean
           haxelib run lime setup
-
-      - name: Rebuild Platform
-        run: haxelib run lime rebuild linux -release
 
       - name: Compile
         run: haxelib run lime build Project.xml linux -D ${{ inputs.buildFlags }}
