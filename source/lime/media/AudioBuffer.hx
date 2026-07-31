@@ -130,13 +130,13 @@ class AudioBuffer
 		var audioBuffer = new AudioBuffer();
 		audioBuffer.data = new UInt8Array(Bytes.alloc(0));
 
-		return NativeCFFI.lime_audio_load_bytes(bytes, audioBuffer);
+		return NativeCFFI.lime_audio_load(bytes, audioBuffer);
 		#else
 		// if base64String contains codec data, strip it then decode it.
 		var base64StringSplit = base64String.split(",");
 		var base64StringNoEncoding = base64StringSplit[base64StringSplit.length - 1];
 		var bytes:Bytes = Base64.decode(base64StringNoEncoding);
-		var data:Dynamic = NativeCFFI.lime_audio_load_bytes(bytes, null);
+		var data:Dynamic = NativeCFFI.lime_audio_load(bytes, null);
 
 		if (data != null)
 		{
