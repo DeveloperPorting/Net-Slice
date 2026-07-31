@@ -3,7 +3,7 @@ package lime.media.vorbis;
 #if (!lime_doc_gen || lime_vorbis)
 import haxe.Int64;
 import haxe.io.Bytes;
-import lime._internal.backend.native.NativeCFFI;
+import lime.ExNativeCFFI as NativeCFFI;
 
 #if hl
 @:keep
