@@ -900,3 +900,9 @@ class ExSystem
 	var FONTS = 4;
 	var USER = 5;
 }
+
+enum Endian
+{
+	LITTLE_ENDIAN;
+	BIG_ENDIAN;
+}
