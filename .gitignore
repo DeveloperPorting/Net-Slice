@@ -19,8 +19,8 @@ NewgroundsCredentials.hx
 
 # Mobile signing stuff
 .apple/
-.env
-*.keystore
+# .env
+# *.keystore
 
 # Exclude JS stuff
 node_modules/
