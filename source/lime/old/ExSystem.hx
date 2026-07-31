@@ -4,6 +4,7 @@ import haxe.Constraints;
 import lime._internal.backend.native.NativeCFFI;
 import lime.app.Application;
 import lime.graphics.RenderContextAttributes;
+import lime.graphics.PixelFormat;
 import lime.math.Rectangle;
 import lime.ui.WindowAttributes;
 import lime.utils.ArrayBuffer;
@@ -879,6 +880,77 @@ class ExSystem
 		}
 
 		return __userDirectory;
+	}
+}
+
+#if !lime_debug
+@:fileXml('tags="haxe,release"')
+@:noDebug
+#end
+class Display
+{
+	/**
+	 * The desktop area represented by this display, with the upper-leftmost display at 0,0
+	**/
+	public var bounds(default, null):Rectangle;
+
+	/**
+	 * The current display mode
+	**/
+	public var currentMode(default, null):DisplayMode;
+
+	public var id(default, null):Int;
+
+	/**
+	 * Pixel density of the display
+	 */
+	public var dpi(default, null):Float;
+
+	/**
+	 * The name of the device, such as "Samsung SyncMaster P2350", "iPhone 6", "Oculus Rift DK2", etc.
+	**/
+	public var name(default, null):String;
+
+	/**
+	 * All of the display modes supported by this device
+	**/
+	public var supportedModes(default, null):Array<DisplayMode>;
+
+	@:noCompletion private function new() {}
+}
+
+#if !lime_debug
+@:fileXml('tags="haxe,release"')
+@:noDebug
+#end
+class DisplayMode
+{
+	/**
+	 * vertical resolution
+	**/
+	public var height(default, null):Int;
+
+	/**
+	 * pixel format
+	**/
+	public var pixelFormat(default, null):PixelFormat;
+
+	/**
+	 * refresh rate in Hz
+	**/
+	public var refreshRate(default, null):Int;
+
+	/**
+	 * horizontal resolution
+	**/
+	public var width(default, null):Int;
+
+	@:noCompletion private function new(width:Int, height:Int, refreshRate:Int, pixelFormat:PixelFormat)
+	{
+		this.width = width;
+		this.height = height;
+		this.refreshRate = refreshRate;
+		this.pixelFormat = pixelFormat;
 	}
 }
 
