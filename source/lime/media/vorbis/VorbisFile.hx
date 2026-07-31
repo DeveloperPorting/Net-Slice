@@ -8,7 +8,7 @@ import lime.ExNativeCFFI as NativeCFFI;
 #if hl
 @:keep
 #end
-@:access(lime._internal.backend.native.NativeCFFI)
+@:access(lime.ExNativeCFFI)
 class VorbisFile
 {
 	public var bitstream(default, null):Int;

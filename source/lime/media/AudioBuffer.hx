@@ -2,7 +2,7 @@ package lime.media;
 
 import haxe.io.Bytes;
 import haxe.io.Path;
-import lime._internal.backend.native.NativeCFFI;
+import lime.ExNativeCFFI as NativeCFFI;
 import lime._internal.format.Base64;
 import lime.app.Future;
 import lime.app.Promise;
@@ -22,7 +22,7 @@ import flash.media.Sound;
 import flash.net.URLRequest;
 #end
 
-@:access(lime._internal.backend.native.NativeCFFI)
+@:access(lime.ExNativeCFFI)
 @:access(lime.utils.Assets)
 #if hl
 @:keep
