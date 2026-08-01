@@ -15,6 +15,9 @@ import funkin.save.Save;
 import hxvlc.util.Handle;
 #end
 import openfl.display.Sprite;
+import openfl.text.TextField;
+import openfl.text.TextFormat;
+import openfl.text.TextFieldAutoSize;
 import openfl.events.Event;
 import openfl.Lib;
 import openfl.media.Video;
@@ -33,6 +36,9 @@ class Main extends Sprite
   var initialState:Class<FlxState> = funkin.InitState; // The FlxState the game starts with.
   var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
   var skipSplash:Bool = true; // Whether to skip the flixel splash screen that appears in release mode.
+
+  // Variável da marca d'água
+  public static var watermark:TextField;
 
   // You can pretty much ignore everything from here on - your code should go in your states.
 
@@ -183,13 +189,28 @@ class Main extends Sprite
 
     addChild(game);
 
+    watermark = new TextField();
+    watermark.defaultTextFormat = new TextFormat("Monsterrat", 14, 0xFFFFFF, true);
+    watermark.text = "Net Slice - INDEV"; 
+    watermark.selectable = false;
+    watermark.mouseEnabled = false;
+    watermark.autoSize = TextFieldAutoSize.LEFT;
+    
+    var dropShadow = new openfl.filters.DropShadowFilter(1, 45, 0x000000, 1, 2, 2, 1);
+    watermark.filters = [dropShadow];
+
+    addChild(watermark);
+
+    FlxG.signals.preUpdate.add(positionWatermark);    
+
     #if FEATURE_DEBUG_FUNCTIONS
     #if !FLX_NO_DEBUG game.debugger.interaction.addTool(new funkin.util.TrackerToolButtonUtil()); #end
     funkin.util.macro.ConsoleMacro.init();
     #end
 
     #if !html5
-    FlxG.scaleMode = new FullScreenScaleMode();
+    // for test
+    // FlxG.scaleMode = new FullScreenScaleMode();
     #end
 
     #if mobile
@@ -202,6 +223,19 @@ class Main extends Sprite
     #else
     trace('hxcpp_debug_server is disabled! This build does not support debugging.');
     #end
+  }
+
+  function positionWatermark():Void
+  {
+    if (watermark != null && FlxG.game != null)
+    {
+      var scale:Float = Math.max(Math.min(FlxG.stage.stageWidth / FlxG.width, FlxG.stage.stageHeight / FlxG.height), 1);
+      
+      watermark.scaleX = watermark.scaleY = scale;
+
+      watermark.x = FlxG.game.x + (FlxG.width * scale) - watermark.width - (5 * scale);
+      watermark.y = FlxG.game.y + (FlxG.height * scale) - watermark.height - (5 * scale);
+    }
   }
 
   #if FEATURE_HAXEUI

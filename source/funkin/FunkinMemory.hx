@@ -119,9 +119,12 @@ class FunkinMemory
     for (key in FlxG.bitmap._cache.keys())
     {
       var obj:Null<FlxGraphic> = FlxG.bitmap.get(key);
-      if (obj != null && obj.useCount <= 0 && !obj.persist && !permanentCachedTextures.exists(key) && !key.contains("fonts"))
+      if (obj != null && obj.useCount <= 0 && !obj.persist && !permanentCachedTextures.exists(key) && !currentCachedTextures.exists(key))
       {
-        keysToRemove.push(key);
+        if (!key.contains("fonts") && !key.contains("freeplay") && !key.contains("albumRoll"))
+        {
+          keysToRemove.push(key);
+        }
       }
     }
 
@@ -132,11 +135,9 @@ class FunkinMemory
       if (obj != null)
       {
         log('Sweeping unused graphic $key');
-        obj.destroy();
-        FlxG.bitmap.removeKey(key);
+        FlxG.bitmap.remove(obj); 
       }
       
-      if (currentCachedTextures.exists(key)) currentCachedTextures.remove(key);
       if (previousCachedTextures.exists(key)) previousCachedTextures.remove(key);
       Assets.cache.clear(key);
     }
@@ -154,7 +155,7 @@ class FunkinMemory
     }
 
     System.gc();
-  }
+  }  
 
   ///// TEXTURES /////
 
@@ -470,14 +471,16 @@ class FunkinMemory
 
   ///// MISC /////
 
-  /**
+/**
    * Clears all Freeplay assets from memory.
    */
   public static inline function clearFreeplay():Void
   {
-    clearUnused();
+    preparePurgeTextureCache();
+    purgeTextureCache();
     preparePurgeSoundCache();
     purgeSoundCache();
+    System.gc();
   }
 
   /**
@@ -485,7 +488,9 @@ class FunkinMemory
    */
   public static inline function clearStickers():Void
   {
-    clearUnused();
+    preparePurgeTextureCache();
+    purgeTextureCache();
+    System.gc();
   }
 
   /**
