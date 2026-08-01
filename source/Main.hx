@@ -37,7 +37,7 @@ class Main extends Sprite
   var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
   var skipSplash:Bool = true; // Whether to skip the flixel splash screen that appears in release mode.
 
-  // Variável da marca d'água
+  // watershit
   public static var watermark:TextField;
 
   // You can pretty much ignore everything from here on - your code should go in your states.
