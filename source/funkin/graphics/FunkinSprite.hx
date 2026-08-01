@@ -515,7 +515,7 @@ class FunkinSprite extends FlxAnimate
   public function makeSolidColor(width:Int, height:Int, color:FlxColor = FlxColor.WHITE):FunkinSprite
   {
     var key = 'solid#${color.toHexString(true, false)}';
-    var graphic:FlxGraphic = FlxG.bitmap.get(key);
+    var graphic:Null<FlxGraphic> = FlxG.bitmap.get(key);
     
     if (graphic == null)
     {
@@ -926,10 +926,10 @@ class FunkinSprite extends FlxAnimate
     filterRenderer.destroy();
     
     if (_renderTexture != null)
-    {
-      _renderTexture.destroy();
-      _renderTexture = null;
-    }
+	{
+	  _renderTexture.destroy();
+	  @:nullSafety(Off) _renderTexture = null;
+	}
     
     // Cancel all tweens so they don't continue to run on a destroyed sprite.
     // This prevents crashes.
