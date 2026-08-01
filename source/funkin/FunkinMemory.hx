@@ -106,6 +106,55 @@ class FunkinMemory
     if (callGarbageCollector) funkin.util.MemoryUtil.collect(true);
     #end
   }
+  
+  /**
+   * Clears absolutely all assets that are not being used.
+   * Great for calling at the end or beginning of a State to avoid leaks.
+   */
+  public static inline function clearUnused():Void
+  {
+    var keysToRemove:Array<String> = [];
+
+    @:privateAccess
+    for (key in FlxG.bitmap._cache.keys())
+    {
+      var obj:Null<FlxGraphic> = FlxG.bitmap.get(key);
+      if (obj != null && obj.useCount <= 0 && !obj.persist && !permanentCachedTextures.exists(key) && !key.contains("fonts"))
+      {
+        keysToRemove.push(key);
+      }
+    }
+
+    @:privateAccess
+    for (key in keysToRemove)
+    {
+      var obj:Null<FlxGraphic> = FlxG.bitmap.get(key);
+      if (obj != null)
+      {
+        log('Sweeping unused graphic $key');
+        obj.destroy();
+        FlxG.bitmap.removeKey(key);
+      }
+      
+      if (currentCachedTextures.exists(key)) currentCachedTextures.remove(key);
+      if (previousCachedTextures.exists(key)) previousCachedTextures.remove(key);
+      Assets.cache.clear(key);
+    }
+    
+    var soundKeysToRemove:Array<String> = [];
+    for (key in currentCachedSounds.keys())
+    {
+       if (!permanentCachedSounds.exists(key)) soundKeysToRemove.push(key);
+    }
+    for (key in soundKeysToRemove)
+    {
+        Assets.cache.removeSound(key);
+        currentCachedSounds.remove(key);
+        previousCachedSounds.remove(key);
+    }
+
+    System.gc();
+  }
 
   ///// TEXTURES /////
 
@@ -426,31 +475,7 @@ class FunkinMemory
    */
   public static inline function clearFreeplay():Void
   {
-    var keysToRemove:Array<String> = [];
-
-    @:privateAccess
-    for (key in FlxG.bitmap._cache.keys())
-    {
-      if (!key.contains("freeplay")) continue;
-      if (permanentCachedTextures.exists(key) || key.contains("fonts")) continue;
-
-      keysToRemove.push(key);
-    }
-
-    @:privateAccess
-    for (key in keysToRemove)
-    {
-      var obj:Null<FlxGraphic> = FlxG.bitmap.get(key);
-      if (obj != null && obj.useCount <= 0)
-      {
-        log('Cleaning asset $key');
-        obj.destroy();
-        FlxG.bitmap.removeKey(key);
-        if (currentCachedTextures.exists(key)) currentCachedTextures.remove(key);
-        Assets.cache.clear(key);
-      }
-    }
-
+    clearUnused();
     preparePurgeSoundCache();
     purgeSoundCache();
   }
@@ -460,30 +485,7 @@ class FunkinMemory
    */
   public static inline function clearStickers():Void
   {
-    var keysToRemove:Array<String> = [];
-
-    @:privateAccess
-    for (key in FlxG.bitmap._cache.keys())
-    {
-      if (!key.contains("stickers")) continue;
-      if (permanentCachedTextures.exists(key) || key.contains("fonts")) continue;
-
-      keysToRemove.push(key);
-    }
-
-    @:privateAccess
-    for (key in keysToRemove)
-    {
-      var obj:Null<FlxGraphic> = FlxG.bitmap.get(key);
-      if (obj != null && obj.useCount <= 0)
-      {
-        log('Cleaning asset $key');
-        obj.destroy();
-        FlxG.bitmap.removeKey(key);
-        if (currentCachedTextures.exists(key)) currentCachedTextures.remove(key);
-        Assets.cache.clear(key);
-      }
-    }
+    clearUnused();
   }
 
   /**

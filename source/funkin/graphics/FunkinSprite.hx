@@ -264,13 +264,13 @@ class FunkinSprite extends FlxAnimate
     }
 
     trace('[ASYNC] Start loading image (${key})');
-    graphic.persist = true;
     openfl.Assets.loadBitmapData(key)
       .onComplete(function(bitmapData:openfl.display.BitmapData)
       {
         trace('[ASYNC] Finished loading image');
         var cache:Bool = false;
         loadBitmapData(bitmapData, cache);
+        if (this.graphic != null) this.graphic.persist = true;
 
         if (fadeTween != null)
         {
@@ -514,8 +514,15 @@ class FunkinSprite extends FlxAnimate
    */
   public function makeSolidColor(width:Int, height:Int, color:FlxColor = FlxColor.WHITE):FunkinSprite
   {
-    // Create a tiny solid color graphic and scale it up to the desired size.
-    var graphic:FlxGraphic = FlxG.bitmap.create(2, 2, color, false, 'solid#${color.toHexString(true, false)}');
+    var key = 'solid#${color.toHexString(true, false)}';
+    var graphic:FlxGraphic = FlxG.bitmap.get(key);
+    
+    if (graphic == null)
+    {
+      // Create a tiny solid color graphic and scale it up to the desired size.
+      graphic = FlxG.bitmap.create(2, 2, color, false, key);
+    }
+    
     frames = graphic.imageFrame;
     scale.set(width / 2.0, height / 2.0);
     updateHitbox();
@@ -805,10 +812,13 @@ class FunkinSprite extends FlxAnimate
 
   override public function draw():Void
   {
-    for (filter in filters ?? [])
+    if (filters != null)
     {
-      @:privateAccess
-      if (filter.__renderDirty) _renderTextureDirty = true;
+      for (filter in filters)
+      {
+        @:privateAccess
+        if (filter.__renderDirty) _renderTextureDirty = true;
+      }
     }
 
     super.draw();
@@ -914,6 +924,13 @@ class FunkinSprite extends FlxAnimate
     @:nullSafety(Off) // TODO: Remove when flixel.FlxSprite is null safed.
     frames = null;
     filterRenderer.destroy();
+    
+    if (_renderTexture != null)
+    {
+      _renderTexture.destroy();
+      _renderTexture = null;
+    }
+    
     // Cancel all tweens so they don't continue to run on a destroyed sprite.
     // This prevents crashes.
     FlxTween.cancelTweensOf(this);
