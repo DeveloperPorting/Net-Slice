@@ -26,12 +26,12 @@ class Preferences
   {
     #if web
     return 60;
-    #elseif mobile
+    /*#elseif mobile
     var refreshRate:Int = FlxG.stage.window.displayMode.refreshRate;
 
     if (refreshRate < 60) refreshRate = 60;
 
-    return refreshRate;
+    return refreshRate;*/
     #else
     return Save?.instance?.options?.framerate ?? 60;
     #end
@@ -41,12 +41,12 @@ class Preferences
   {
     #if web
     return 60;
-    #elseif mobile
+    /*#elseif mobile
     var refreshRate:Int = FlxG.stage.window.displayMode.refreshRate;
 
     if (refreshRate < 60) refreshRate = 60;
 
-    return refreshRate;
+    return refreshRate;*/
     #else
     var save:Save = Save.instance;
     save.options.framerate = value;
