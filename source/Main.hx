@@ -192,7 +192,7 @@ class Main extends Sprite
 
     watermark = new TextField();
     watermark.defaultTextFormat = new TextFormat("Monsterrat", 14, 0xFFFFFF, true);
-    watermark.text = "Net Slice - v0.1.0 (" + getGitCommitHash() + ")"; 
+    watermark.text = "Net Slice - v0.1.0 (" + GitCommitMacro.getGitCommitHash() + ")"; 
     watermark.selectable = false;
     watermark.mouseEnabled = false;
     watermark.autoSize = TextFieldAutoSize.LEFT;
@@ -306,19 +306,4 @@ class Main extends Sprite
     }
   }
   #end
-
-  macro static function getGitCommitHash():haxe.macro.Expr.ExprOf<String>
-  {
-    try
-    {
-      var process = new sys.io.Process("git", ["rev-parse", "--short", "HEAD"]);
-      var hash = process.stdout.readLine();
-      process.close();
-      return macro $v{hash};
-    }
-    catch (e:Dynamic)
-    {
-      return macro $v{"UNKNOWN"};
-    }
-  }
 }
