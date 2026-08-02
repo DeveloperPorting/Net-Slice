@@ -23,6 +23,7 @@ import openfl.Lib;
 import openfl.media.Video;
 import openfl.net.NetStream;
 import funkin.util.WindowUtil;
+import openfl.filters.GlowFilter;
 
 using funkin.util.AnsiUtil;
 
@@ -191,13 +192,14 @@ class Main extends Sprite
 
     watermark = new TextField();
     watermark.defaultTextFormat = new TextFormat("Monsterrat", 14, 0xFFFFFF, true);
-    watermark.text = "Net Slice - INDEV"; 
+    watermark.text = "Net Slice - v0.1.0 (" + getGitCommitHash() + ")"; 
     watermark.selectable = false;
     watermark.mouseEnabled = false;
     watermark.autoSize = TextFieldAutoSize.LEFT;
+    watermark.alpha = 0.8;
     
-    var dropShadow = new openfl.filters.DropShadowFilter(1, 45, 0x000000, 1, 2, 2, 1);
-    watermark.filters = [dropShadow];
+    var outline = new GlowFilter(0x000000, 1, 2, 2, 10, 1);
+    watermark.filters = [outline];
 
     addChild(watermark);
 
@@ -304,4 +306,19 @@ class Main extends Sprite
     }
   }
   #end
+
+  macro static function getGitCommitHash():haxe.macro.Expr.ExprOf<String>
+  {
+    try
+    {
+      var process = new sys.io.Process("git", ["rev-parse", "--short", "HEAD"]);
+      var hash = process.stdout.readLine();
+      process.close();
+      return macro $v{hash};
+    }
+    catch (e:Dynamic)
+    {
+      return macro $v{"UNKNOWN"};
+    }
+  }
 }
