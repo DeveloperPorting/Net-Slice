@@ -10,6 +10,7 @@ import funkin.PlayerSettings;
 import funkin.util.logging.CrashHandler;
 import funkin.ui.debug.FunkinDebugDisplay;
 import funkin.ui.debug.FunkinDebugDisplay.DebugDisplayMode;
+import funkin.api.github.GitCommitMacro;
 import funkin.save.Save;
 #if hxvlc
 import hxvlc.util.Handle;
@@ -23,7 +24,7 @@ import openfl.Lib;
 import openfl.media.Video;
 import openfl.net.NetStream;
 import funkin.util.WindowUtil;
-import openfl.filters.GlowFilter;
+import openfl.filters.DropShadowFilter;
 
 using funkin.util.AnsiUtil;
 
@@ -191,17 +192,17 @@ class Main extends Sprite
     addChild(game);
 
     watermark = new TextField();
-    watermark.defaultTextFormat = new TextFormat("Monsterrat", 14, 0xFFFFFF, true);
-    watermark.text = "Net Slice - v0.1.0 (" + GitCommitMacro.getGitCommitHash() + ")"; 
-    watermark.selectable = false;
-    watermark.mouseEnabled = false;
-    watermark.autoSize = TextFieldAutoSize.LEFT;
-    watermark.alpha = 0.8;
-    
-    var outline = new GlowFilter(0x000000, 1, 2, 2, 10, 1);
-    watermark.filters = [outline];
-
-    addChild(watermark);
+	watermark.defaultTextFormat = new TextFormat("Monsterrat", 14, 0xFFFFFF, true);
+	watermark.text = "Net Slice - v0.1.0 (" + GitCommitMacro.getGitCommitHash() + ")"; 
+	watermark.selectable = false;
+	watermark.mouseEnabled = false;
+	watermark.autoSize = TextFieldAutoSize.LEFT;
+	watermark.alpha = 0.8;
+	
+	var outline = new DropShadowFilter(0x000000, 0, 0, 1, 2, 2, 10, 1);
+	watermark.filters = [outline];
+	
+	addChild(watermark);
 
     FlxG.signals.preUpdate.add(positionWatermark);    
 

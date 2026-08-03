@@ -1,4 +1,4 @@
-package;
+package funkin.api.github;
 
 /**
  * A standalone class used solely for running compilation macros.
