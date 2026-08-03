@@ -413,9 +413,26 @@ class FunkinMemory
 
   public static inline function clearStickers():Void
   {
-    preparePurgeTextureCache();
-    purgeTextureCache();
-    System.gc();
+    var keysToRemove:Array<String> = [];
+
+    @:privateAccess
+    for (key in FlxG.bitmap._cache.keys())
+    {
+      if (!key.contains("stickers")) continue;
+      if (permanentCachedTextures.exists(key) || key.contains("fonts")) continue;
+
+      keysToRemove.push(key);
+    }
+
+    for (key in keysToRemove)
+    {
+      log('Cleaning Sticker asset $key');
+      
+      FlxG.bitmap.removeByKey(key);
+      
+      if (currentCachedTextures.exists(key)) currentCachedTextures.remove(key);
+      Assets.cache.clear(key);
+    }
   }
 
   private static function log(message:String):Void
