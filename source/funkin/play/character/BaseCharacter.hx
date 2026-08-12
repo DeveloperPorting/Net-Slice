@@ -43,7 +43,8 @@ class BaseCharacter extends Bopper
   private var _cachedOrigin:FlxPoint = new FlxPoint();
   private var _cachedCorner:FlxPoint = new FlxPoint();
   private var _cachedFeet:FlxPoint = new FlxPoint();
-
+  
+  public var tempVocals:Bool = false;
   public var characterOrigin(get, never):FlxPoint;
   function get_characterOrigin():FlxPoint
   {
@@ -101,7 +102,7 @@ class BaseCharacter extends Bopper
     super(CharacterDataParser.DEFAULT_DANCEEVERY);
 
     this.characterId = id;
-    ignoreExclusionPref = ["sing"];
+    ignoreExclusionPref = ['sing'];
 
     _data = CharacterDataParser.fetchCharacterData(this.characterId);
     if (_data == null)
@@ -200,6 +201,20 @@ class BaseCharacter extends Bopper
     {
       this.dance(true);
     }
+    if (tempVocals)
+    {
+      // stop the temporary vocals
+      if (characterType == BF && PlayState.instance.vocals.playerVolume == 1)
+      {
+        PlayState.instance.vocals.playerVolume = 0;
+      }
+
+      if (characterType == DAD && PlayState.instance.vocals.opponentVolume == 1)
+      {
+        PlayState.instance.vocals.opponentVolume = 0;
+      }
+      tempVocals = false;
+    }
   }
 
   public function resetCameraFocusPoint():Void
@@ -213,8 +228,10 @@ class BaseCharacter extends Bopper
 
   public function initHealthIcon(isOpponent:Bool):Void
   {
-    var targetIcon = isOpponent ? PlayState.instance.iconP2 : PlayState.instance.iconP1;
-    if (targetIcon == null)
+    // Modders may want to use characters outside of PlayState and this still gets called, so we ignore it.
+    if (PlayState.instance == null) return;
+
+    if (!isOpponent)
     {
       log(' WARNING '.warning() + ' Player ${isOpponent ? 2 : 1} ($characterId) health icon not found!');
       return;
@@ -224,7 +241,7 @@ class BaseCharacter extends Bopper
     if (!isOpponent) targetIcon.flipX = !targetIcon.flipX;
   }
 
-  public override function onUpdate(event:UpdateScriptEvent):Void
+  override public function onUpdate(event:UpdateScriptEvent):Void
   {
     super.onUpdate(event);
 
@@ -302,7 +319,7 @@ class BaseCharacter extends Bopper
     return ctrl.NOTE_LEFT || ctrl.NOTE_DOWN || ctrl.NOTE_UP || ctrl.NOTE_RIGHT;
   }
 
-  public override function onNoteHit(event:HitNoteScriptEvent)
+  override public function onNoteHit(event:HitNoteScriptEvent):Void
   {
     super.onNoteHit(event);
     if (event.eventCanceled) return;
@@ -327,7 +344,7 @@ class BaseCharacter extends Bopper
     }
   }
 
-  public override function onNoteMiss(event:NoteScriptEvent)
+  override public function onNoteMiss(event:NoteScriptEvent)
   {
     super.onNoteMiss(event);
     if (event.eventCanceled) return;
@@ -339,7 +356,7 @@ class BaseCharacter extends Bopper
     else if (event.note.noteData.getMustHitNote() && characterType == GF) playComboDropAnimation(event.comboCount);
   }
 
-  public override function onNoteHoldDrop(event:HoldNoteScriptEvent)
+  override public function onNoteHoldDrop(event:HoldNoteScriptEvent)
   {
     super.onNoteHoldDrop(event);
     if (event.eventCanceled) return;
@@ -376,7 +393,7 @@ class BaseCharacter extends Bopper
     }
   }
 
-  public override function onNoteGhostMiss(event:GhostMissNoteScriptEvent):Void
+  override public function onNoteGhostMiss(event:GhostMissNoteScriptEvent):Void
   {
     super.onNoteGhostMiss(event);
     if (event.eventCanceled || !event.playAnim) return;
@@ -384,7 +401,7 @@ class BaseCharacter extends Bopper
     if (characterType == BF) this.playSingAnimation(event.dir, true);
   }
 
-  public override function onDestroy(event:ScriptEvent):Void
+  override public function onDestroy(event:ScriptEvent):Void
   {
     this.characterType = OTHER;
   }
@@ -396,8 +413,22 @@ class BaseCharacter extends Bopper
     playAnimation(anim, true);
   }
 
-  public override function playAnimation(name:String, restart:Bool = false, ignoreOther:Bool = false, reversed:Bool = false):Void
+  override public function playAnimation(name:String, restart:Bool = false, ignoreOther:Bool = false, reversed:Bool = false):Void
   {
+    if (tempVocals && PlayState.instance != null)
+    {
+      // restart the character's vocals for the duration of the animation
+      if (characterType == BF && PlayState.instance.vocals.playerVolume == 0)
+      {
+        PlayState.instance.vocals.playerVolume = 1;
+      }
+      else if (characterType == DAD && PlayState.instance.vocals.opponentVolume == 0)
+      {
+        PlayState.instance.vocals.opponentVolume = 1;
+      }
+      else if (characterType != BF || characterType != DAD) tempVocals = false;
+    }
+
     super.playAnimation(name, restart, ignoreOther, reversed);
   }
 
