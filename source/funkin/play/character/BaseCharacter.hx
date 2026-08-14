@@ -231,7 +231,8 @@ class BaseCharacter extends Bopper
     // Modders may want to use characters outside of PlayState and this still gets called, so we ignore it.
     if (PlayState.instance == null) return;
 
-    if (!isOpponent)
+    var targetIcon = isOpponent ? PlayState.instance.iconP2 : PlayState.instance.iconP1;
+    if (targetIcon == null)
     {
       log(' WARNING '.warning() + ' Player ${isOpponent ? 2 : 1} ($characterId) health icon not found!');
       return;
